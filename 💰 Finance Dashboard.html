@@ -1086,6 +1086,7 @@
             <h1><i class="fas fa-wallet"></i> Finance Dashboard</h1>
             <div class="header-right">
                 <span class="header-date" id="currentDate"></span>
+                <button class="btn btn-sm btn-outline" id="holidayBtn" title="Manage Holidays">Holidays</button>
                 <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -1116,7 +1117,10 @@
             <div class="net-worth-stats">
                 <div class="stat">
                     <div class="stat-label">Monthly Income</div>
-                    <div class="stat-value" id="monthlyIncome">৳0</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="stat-value" id="monthlyIncome">৳0</div>
+                        <button class="btn btn-sm btn-outline" id="editSalaryBtn" title="Edit monthly salary">Edit</button>
+                    </div>
                 </div>
                 <div class="stat">
                     <div class="stat-label">Monthly Savings</div>
@@ -1195,6 +1199,22 @@
                     </div>
                     <div id="recurringList" class="scroll-list">
                         <div class="empty-state"><i class="fas fa-calendar-alt"></i>No recurring investments</div>
+                    </div>
+                </div>
+
+                <!-- RECURRING EXPENSES -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-retweet" style="color:#e67e22;"></i> Recurring Expenses</h3>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <span class="badge" id="recurringExpenseCount">0</span>
+                            <button class="btn btn-sm btn-primary" id="addRecurringExpenseBtn">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                    <div id="recurringExpenseList" class="scroll-list">
+                        <div class="empty-state"><i class="fas fa-calendar-times"></i>No recurring expenses</div>
                     </div>
                 </div>
 
@@ -1312,6 +1332,20 @@
                     </div>
                     <div class="expense-list-scroll" id="recentExpenseList">
                         <div class="empty-state"><i class="fas fa-inbox"></i>No expenses yet</div>
+                    </div>
+                </div>
+
+                <!-- LIABILITIES -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-hand-holding-usd" style="color:#e74c3c;"></i> Liabilities</h3>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <span class="badge" id="liabilityCount">0</span>
+                            <button class="btn btn-sm btn-outline" id="addLiabilityBtn"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                    </div>
+                    <div id="liabilitiesList" class="scroll-list">
+                        <div class="empty-state"><i class="fas fa-balance-scale-left"></i>No liabilities recorded</div>
                     </div>
                 </div>
 
@@ -1453,6 +1487,131 @@
             </div>
         </div>
 
+        <!-- HOLIDAYS MODAL -->
+        <div class="modal-overlay" id="holidaysModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-calendar-day" style="color:#f39c12;"></i> Bank Holidays</h2>
+                    <button class="modal-close" data-modal="holidaysModal">&times;</button>
+                </div>
+                <div style="margin-bottom:12px;color:var(--text-secondary);font-size:14px;">
+                    Paste holiday dates (YYYY-MM-DD), one per line. These will be treated as non-working days when computing salary dates.
+                </div>
+                <textarea id="holidaysTextarea" rows="6" style="width:100%;padding:12px;border:1.5px solid var(--input-border);border-radius:10px;background:var(--input-bg);color:var(--text-primary);font-size:13px;resize:vertical;" placeholder="2026-03-26
+2026-12-16"></textarea>
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button class="btn btn-success" id="saveHolidaysBtn" style="flex:1;"><i class="fas fa-check"></i> Save Holidays</button>
+                    <button class="btn btn-outline" data-modal="holidaysModal">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADD RECURRING EXPENSE MODAL -->
+        <div class="modal-overlay" id="recurringExpenseModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-retweet" style="color:#e67e22;"></i> Add Recurring Expense</h2>
+                    <button class="modal-close" data-modal="recurringExpenseModal">&times;</button>
+                </div>
+                <form id="recurringExpenseForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" id="recExpName" placeholder="Electricity" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="recExpCategory" required>
+                                <option value="utilities">💡 Utilities</option>
+                                <option value="rent">🏠 Rent</option>
+                                <option value="debt">💳 Debt</option>
+                                <option value="other">🎯 Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (৳) *</label>
+                            <input type="number" id="recExpAmount" placeholder="300" step="0.01" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Frequency</label>
+                            <select id="recExpFrequency">
+                                <option value="monthly">Monthly</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="quarterly">Quarterly</option>
+                            </select>
+                        </div>
+                        <div class="form-group full">
+                            <label>Next Due Date *</label>
+                            <input type="date" id="recExpDate" required />
+                        </div>
+                        <div class="form-group full" style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fas fa-plus"></i> Add Recurring Expense</button>
+                            <button type="button" class="btn btn-outline" data-modal="recurringExpenseModal">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ADD LIABILITY MODAL -->
+        <div class="modal-overlay" id="addLiabilityModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-hand-holding-usd" style="color:#e74c3c;"></i> Add Liability</h2>
+                    <button class="modal-close" data-modal="addLiabilityModal">&times;</button>
+                </div>
+                <form id="addLiabilityForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" id="liabName" placeholder="Personal Loan" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (৳) *</label>
+                            <input type="number" id="liabAmount" placeholder="45000" step="0.01" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Installment (optional)</label>
+                            <input type="number" id="liabInstallment" placeholder="3600" step="0.01" />
+                        </div>
+                        <div class="form-group full" style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button type="submit" class="btn btn-primary" style="flex:1;"><i class="fas fa-plus"></i> Add Liability</button>
+                            <button type="button" class="btn btn-outline" data-modal="addLiabilityModal">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- AMORTIZATION MODAL -->
+        <div class="modal-overlay" id="amortModal">
+            <div class="modal" style="max-width:900px;">
+                <div class="modal-header">
+                    <h2 id="amortModalTitle"><i class="fas fa-file-invoice-dollar" style="color:#6c5ce7;"></i> Amortization</h2>
+                    <button class="modal-close" data-modal="amortModal">&times;</button>
+                </div>
+                <div style="overflow:auto; max-height:60vh;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                        <thead>
+                            <tr style="text-align:left; border-bottom:1px solid var(--border-color);">
+                                <th style="padding:8px;">Date</th>
+                                <th style="padding:8px;">Payment</th>
+                                <th style="padding:8px;">Principal</th>
+                                <th style="padding:8px;">Interest</th>
+                                <th style="padding:8px;">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="amortTableBody"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex; gap:12px; align-items:center; margin-top:12px;">
+                    <div style="flex:1; color:var(--text-secondary);">Total interest paid: <strong id="amortTotalInterest">৳0</strong></div>
+                    <button class="btn btn-primary" id="amortExportBtn">Export CSV</button>
+                    <button class="btn btn-outline" data-modal="amortModal">Close</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -1507,6 +1666,7 @@
             savings: [],
             investments: [],
             recurringInvestments: [],
+            recurringIncomes: [],
             liabilities: [],
             cash: 0,
             budgets: { ...DEFAULT_BUDGETS },
@@ -1529,6 +1689,11 @@
                     if (!data.notifications) data.notifications = [];
                     if (!data.savings) data.savings = [];
                     if (!data.investments) data.investments = [];
+                    if (!data.recurringIncomes) data.recurringIncomes = [];
+                    if (!data.recurringExpenses) data.recurringExpenses = [];
+                    if (!data.liabilities) data.liabilities = [];
+                    if (!data.holidays) data.holidays = [];
+                    if (!data.planned) data.planned = [];
                 }
             } catch (e) { console.warn('Load error', e); }
         }
@@ -1696,6 +1861,70 @@
                 const days = daysUntil(r.nextDate);
                 return days >= 0 && days <= 7;
             }).sort((a, b) => daysUntil(a.nextDate) - daysUntil(b.nextDate));
+        }
+
+        // Process recurring incomes: create income entries when nextDate arrives and advance nextDate
+        function processRecurringIncomes() {
+            data.recurringIncomes = data.recurringIncomes || [];
+            const today = todayStr();
+            for (const rec of data.recurringIncomes) {
+                // skip if startDate in future
+                if (rec.startDate && rec.startDate > today) continue;
+
+                // ensure nextDate exists
+                if (!rec.nextDate) {
+                    if (rec.type === 'salary') {
+                        const now = new Date();
+                        rec.nextDate = computeThirdLastWorkingDay(now.getFullYear(), now.getMonth());
+                    } else {
+                        rec.nextDate = todayStr();
+                    }
+                }
+
+                // If nextDate is today or earlier and we haven't already added income for that date+source, add it
+                if (rec.nextDate <= today) {
+                    const already = data.incomes.some(i => i.source === rec.type && i.date === rec.nextDate && i.amount === rec.amount);
+                    if (!already) {
+                        data.incomes.push({ id: generateId(), amount: rec.amount, source: rec.type, description: rec.name, date: rec.nextDate, isIncome: true });
+                        // also add mirrored expense entry (same as manual income behavior)
+                        data.expenses.push({ id: generateId(), amount: rec.amount, category: 'other', description: '💰 Income: ' + rec.name, date: rec.nextDate, isIncome: true });
+                    }
+
+                    // advance nextDate to next month
+                    const d = new Date(rec.nextDate);
+                    const nextMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+                    if (rec.type === 'salary') {
+                        rec.nextDate = computeThirdLastWorkingDay(nextMonth.getFullYear(), nextMonth.getMonth());
+                    } else {
+                        // preserve day-of-month where possible
+                        rec.nextDate = addMonthsPreserveDay(rec.nextDate, 1);
+                    }
+                }
+            }
+            saveData();
+        }
+
+        // Apply a salary amount override to recurring salary entries and upcoming income records
+        function applySalaryAmountOverride(amount, updatePast = false) {
+            if (!amount) return;
+            data.recurringIncomes = data.recurringIncomes || [];
+            for (const rec of data.recurringIncomes) {
+                if (rec.type === 'salary') rec.amount = Number(amount);
+            }
+            const today = todayStr();
+            data.incomes = data.incomes || [];
+            data.expenses = data.expenses || [];
+            for (const inc of data.incomes) {
+                if (inc.source === 'salary') {
+                    if (updatePast || inc.date >= today) inc.amount = Number(amount);
+                }
+            }
+            for (const ex of data.expenses) {
+                if (ex.isIncome && ex.description && (ex.description.includes('Payroll Salary') || ex.description.includes('Income: Payroll'))) {
+                    if (updatePast || ex.date >= today) ex.amount = Number(amount);
+                }
+            }
+            saveData();
         }
 
         // ============================================================
@@ -2035,6 +2264,188 @@
                     renderAll();
                 });
             });
+        }
+
+        // ============================================================
+        // Recurring Expenses & Liabilities
+        // ============================================================
+        function renderRecurringExpenses() {
+            const container = document.getElementById('recurringExpenseList');
+            const recs = data.recurringExpenses || [];
+            document.getElementById('recurringExpenseCount').textContent = recs.length;
+            if (recs.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-times"></i>No recurring expenses</div>`;
+                return;
+            }
+            let html = '';
+            const sorted = [...recs].sort((a,b) => new Date(a.nextDate) - new Date(b.nextDate));
+            for (const r of sorted) {
+                const days = daysUntil(r.nextDate);
+                html += `
+                    <div class="recurring-item">
+                        <div class="left">
+                            <span class="icon">💸</span>
+                            <div class="details">
+                                <div class="name">${r.name}</div>
+                                <div class="meta">${r.frequency} · ${getCategoryLabel(r.category || 'other')}</div>
+                            </div>
+                        </div>
+                        <div class="right">
+                            <div class="amount">${formatCurrency(r.amount)}</div>
+                            <div class="next-date ${days<=3? 'soon':''}">${formatDate(r.nextDate)}${days>=0? ' · '+days+' days':''}</div>
+                            <button class="delete-btn" data-id="${r.id}" data-type="recurring-expense"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            container.querySelectorAll('.delete-btn[data-type="recurring-expense"]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    data.recurringExpenses = (data.recurringExpenses||[]).filter(x => x.id !== id);
+                    saveData(); renderAll();
+                });
+            });
+        }
+
+        function processRecurringExpenses() {
+            data.recurringExpenses = data.recurringExpenses || [];
+            const today = todayStr();
+            for (const rec of data.recurringExpenses) {
+                if (rec.startDate && rec.startDate > today) continue;
+                if (!rec.nextDate) rec.nextDate = todayStr();
+                if (rec.nextDate <= today) {
+                    const already = data.expenses.some(e => e.description === rec.name && e.date === rec.nextDate && e.amount === rec.amount && !e.isIncome);
+                    if (!already) {
+                        data.expenses.push({ id: generateId(), amount: Number(rec.amount), category: rec.category || 'other', description: rec.name, date: rec.nextDate, isIncome: false });
+                    }
+                    // advance nextDate
+                    if (rec.frequency === 'monthly') {
+                        rec.nextDate = addMonthsPreserveDay(rec.nextDate, 1);
+                    } else if (rec.frequency === 'weekly') {
+                        const d = new Date(rec.nextDate); d.setDate(d.getDate()+7); rec.nextDate = d.toISOString().split('T')[0];
+                    } else if (rec.frequency === 'quarterly') {
+                        rec.nextDate = addMonthsPreserveDay(rec.nextDate, 3);
+                    } else {
+                        rec.nextDate = addMonthsPreserveDay(rec.nextDate, 1);
+                    }
+                }
+            }
+            saveData();
+        }
+
+        function renderLiabilities() {
+            const container = document.getElementById('liabilitiesList');
+            const list = data.liabilities || [];
+            document.getElementById('liabilityCount').textContent = list.length;
+            if (list.length === 0) { container.innerHTML = `<div class="empty-state"><i class="fas fa-balance-scale-left"></i>No liabilities recorded</div>`; return; }
+            let html = '';
+            for (const l of list) {
+                html += `
+                    <div class="recurring-item">
+                        <div class="left">
+                            <span class="icon">💳</span>
+                            <div class="details">
+                                <div class="name">${l.name}</div>
+                                <div class="meta">${l.installment? 'Inst: '+formatCurrency(l.installment):''}${l.notes? ' · '+l.notes : ''}</div>
+                            </div>
+                        </div>
+                        <div class="right">
+                            <div class="amount">${formatCurrency(l.amount)}</div>
+                            <div class="next-date">Outstanding</div>
+                            <button class="btn btn-sm btn-outline" data-id="${l.id}" data-type="liab-pay">Pay</button>
+                            <button class="btn btn-sm btn-outline" data-id="${l.id}" data-type="liab-amort">Amortize</button>
+                            <button class="delete-btn" data-id="${l.id}" data-type="liab-delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+
+            container.querySelectorAll('[data-type="liab-pay"]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const l = (data.liabilities||[]).find(x => x.id === id);
+                    if (!l) return;
+                    const defaultPay = l.installment || Math.min(l.amount, 0);
+                    const ans = prompt('Enter payment amount (৳):', l.installment ? String(l.installment) : '0');
+                    const paid = parseFloat(ans);
+                    if (!paid || paid <= 0) return;
+                    l.amount = Math.max(0, Number(l.amount) - paid);
+                    // record expense
+                    data.expenses.push({ id: generateId(), amount: paid, category: 'debt', description: 'Liability payment: '+l.name, date: todayStr(), isIncome: false });
+                    if (l.amount <= 0) data.liabilities = (data.liabilities||[]).filter(x => x.id !== id);
+                    saveData(); renderAll();
+                });
+            });
+
+            container.querySelectorAll('[data-type="liab-amort"]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const l = (data.liabilities||[]).find(x => x.id === id);
+                    if (!l) return;
+                    // Ask for annual interest (percent)
+                    const interestAns = prompt('Enter annual interest rate (%) for this liability (0 if none):', l.interestAnnual ? String(l.interestAnnual*100) : '0');
+                    const annualRate = parseFloat(interestAns) ? parseFloat(interestAns) / 100 : 0;
+                    // Ask for monthly payment
+                    const defaultMonthly = l.installment || Math.max(1, Math.ceil(l.amount / 12));
+                    const payAns = prompt('Enter monthly payment amount (৳):', String(defaultMonthly));
+                    const monthly = parseFloat(payAns);
+                    if (!monthly || monthly <= 0) { alert('Invalid monthly payment'); return; }
+                    const schedule = computeAmortization(Number(l.amount), monthly, annualRate, todayStr());
+                    if (!schedule || schedule.length === 0) { alert('Could not compute amortization schedule'); return; }
+                    // populate modal
+                    const tbl = document.getElementById('amortTableBody');
+                    tbl.innerHTML = '';
+                    let totalInterest = 0;
+                    for (const row of schedule) {
+                        totalInterest += row.interest;
+                        const tr = `<tr><td>${row.date}</td><td>${formatCurrency(row.payment)}</td><td>${formatCurrency(row.principal)}</td><td>${formatCurrency(row.interest)}</td><td>${formatCurrency(row.balance)}</td></tr>`;
+                        tbl.innerHTML += tr;
+                    }
+                    document.getElementById('amortTotalInterest').textContent = formatCurrency(totalInterest);
+                    document.getElementById('amortModalTitle').textContent = `Amortization — ${l.name}`;
+                    openModal('amortModal');
+                });
+            });
+
+            container.querySelectorAll('.delete-btn[data-type="liab-delete"]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    data.liabilities = (data.liabilities||[]).filter(x => x.id !== id);
+                    saveData(); renderAll();
+                });
+            });
+        }
+
+        // Compute amortization schedule (monthly). Returns array of {date, payment, principal, interest, balance}
+        function computeAmortization(principal, monthlyPayment, annualRate, startDateStr) {
+            const schedule = [];
+            let balance = Number(principal);
+            const monthlyRate = annualRate ? (annualRate / 12) : 0;
+            let date = new Date(startDateStr);
+            // ensure date is first payment month (use next month as first payment)
+            // We'll set payment dates on same day-of-month as startDateStr
+            const day = date.getDate();
+            let maxIter = 600; // safety cap 50 years
+            while (balance > 0.01 && maxIter-- > 0) {
+                // advance to next month
+                date.setMonth(date.getMonth() + 1);
+                // adjust day
+                const paymentDate = new Date(date.getFullYear(), date.getMonth(), Math.min(day, new Date(date.getFullYear(), date.getMonth()+1, 0).getDate()));
+                const interest = balance * monthlyRate;
+                let principalPaid = monthlyPayment - interest;
+                if (principalPaid <= 0) {
+                    // payment too small to cover interest
+                    return null;
+                }
+                if (principalPaid > balance) principalPaid = balance;
+                const payment = principalPaid + interest;
+                balance = Math.max(0, balance - principalPaid);
+                schedule.push({ date: paymentDate.toISOString().split('T')[0], payment, principal: principalPaid, interest, balance });
+                if (schedule.length > 600) break;
+            }
+            return schedule;
         }
 
         // ============================================================
@@ -2463,6 +2874,99 @@
             importData(text);
         });
 
+        // Edit salary button handler
+        document.getElementById('editSalaryBtn').addEventListener('click', function() {
+            const current = (data.recurringIncomes || []).find(r => r.type === 'salary');
+            const currentVal = current ? current.amount : 0;
+            const ans = prompt('Enter your monthly salary (৳):', String(currentVal || 59000));
+            if (ans === null) return;
+            const newVal = parseFloat(ans.replace(/,/g, ''));
+            if (!newVal || newVal <= 0) { alert('Invalid amount'); return; }
+            const updatePast = confirm('Also update past salary entries in history? (OK = Yes)');
+            applySalaryAmountOverride(newVal, updatePast);
+            renderAll();
+            alert('Salary updated to ৳' + newVal.toFixed(2));
+        });
+
+        // Holidays button and modal
+        document.getElementById('holidayBtn').addEventListener('click', function() {
+            // populate textarea with existing holidays
+            const txt = (data.holidays || []).join('\n');
+            document.getElementById('holidaysTextarea').value = txt;
+            openModal('holidaysModal');
+        });
+
+        document.getElementById('saveHolidaysBtn').addEventListener('click', function() {
+            const raw = document.getElementById('holidaysTextarea').value.trim();
+            if (!raw) { data.holidays = []; saveData(); closeModal('holidaysModal'); renderAll(); return; }
+            const lines = raw.split('\n').map(s => s.trim()).filter(Boolean);
+            // simple validation YYYY-MM-DD
+            const valid = lines.filter(l => /^\d{4}-\d{2}-\d{2}$/.test(l));
+            data.holidays = valid;
+            saveData();
+            closeModal('holidaysModal');
+            // recompute any salary nextDates
+            data.recurringIncomes = data.recurringIncomes || [];
+            for (const rec of data.recurringIncomes) {
+                if (rec.type === 'salary') {
+                    const now = new Date();
+                    rec.nextDate = computeThirdLastWorkingDay(now.getFullYear(), now.getMonth());
+                }
+            }
+            saveData();
+            processRecurringIncomes();
+            renderAll();
+        });
+
+        // Recurring Expense modal
+        document.getElementById('addRecurringExpenseBtn').addEventListener('click', function() {
+            document.getElementById('recExpDate').value = todayStr();
+            openModal('recurringExpenseModal');
+        });
+
+        document.getElementById('recurringExpenseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('recExpName').value.trim();
+            const category = document.getElementById('recExpCategory').value;
+            const amount = parseFloat(document.getElementById('recExpAmount').value);
+            const frequency = document.getElementById('recExpFrequency').value;
+            const nextDate = document.getElementById('recExpDate').value || todayStr();
+            if (!name || !amount) { alert('Please fill required fields'); return; }
+            data.recurringExpenses = data.recurringExpenses || [];
+            data.recurringExpenses.push({ id: generateId(), name, category, amount, frequency, nextDate, startDate: nextDate });
+            saveData(); closeModal('recurringExpenseModal'); renderAll();
+        });
+
+        // Liability modal
+        document.getElementById('addLiabilityBtn').addEventListener('click', function() {
+            document.getElementById('liabName').value = '';
+            document.getElementById('liabAmount').value = '';
+            document.getElementById('liabInstallment').value = '';
+            openModal('addLiabilityModal');
+        });
+
+        document.getElementById('addLiabilityForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('liabName').value.trim();
+            const amount = parseFloat(document.getElementById('liabAmount').value);
+            const installment = parseFloat(document.getElementById('liabInstallment').value) || null;
+            if (!name || !amount) { alert('Please enter valid liability'); return; }
+            data.liabilities = data.liabilities || [];
+            data.liabilities.push({ id: generateId(), name, amount, installment });
+            saveData(); closeModal('addLiabilityModal'); renderAll();
+        });
+
+        // Amortization export
+        document.getElementById('amortExportBtn').addEventListener('click', function() {
+            const rows = Array.from(document.querySelectorAll('#amortTableBody tr')).map(tr => {
+                return Array.from(tr.children).map(td => td.textContent.replace(/,/g,'')).join(',');
+            });
+            const csv = ['Date,Payment,Principal,Interest,Balance', ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `amortization_${todayStr()}.csv`; a.click(); URL.revokeObjectURL(url);
+        });
+
         // ============================================================
         //  THEME TOGGLE
         // ============================================================
@@ -2485,11 +2989,14 @@
             const emiRemaining = 5;
             data.liabilities.push({ id: generateId(), name: 'Loan EMI (remaining)', amount: emiRemaining * 3600 });
 
-            // Add current month's salary posting (approximate — you can edit later)
-            const salaryDate = todayStr();
-            data.incomes.push({ id: generateId(), amount: 58000, source: 'payroll', description: 'Monthly Salary (payroll)', date: salaryDate, isIncome: true });
-            // bkash extra income (or pocket) — recorded as income
-            data.incomes.push({ id: generateId(), amount: 1000, source: 'bkash', description: 'Bkash extra', date: salaryDate, isIncome: true });
+            // Setup recurring incomes (salary + bkash extra). Salary uses 3rd-last working day rule.
+            data.recurringIncomes = data.recurringIncomes || [];
+            // Salary: ৳58,000 payroll
+            const now = new Date();
+            const thisMonthSalaryDate = computeThirdLastWorkingDay(now.getFullYear(), now.getMonth());
+            data.recurringIncomes.push({ id: generateId(), name: 'Payroll Salary', amount: 59000, type: 'salary', frequency: 'monthly', nextDate: thisMonthSalaryDate, startDate: '2025-01-01' });
+            // Bkash extra: ৳1,000 (monthly) — started this month
+            data.recurringIncomes.push({ id: generateId(), name: 'Bkash Extra', amount: 1000, type: 'bkash', frequency: 'monthly', nextDate: todayStr(), startDate: todayStr() });
 
             // Recurring investments: IDPC, Trust, Bkash
             data.recurringInvestments = data.recurringInvestments || [];
@@ -2501,10 +3008,15 @@
             data.savings = data.savings || [];
             data.savings.push({ id: generateId(), name: '1yr Recurring Deposit (expected)', current: 0, expectedMaturity: 12636, notes: 'User mentioned 1yr recurrent deposit => 12636 after 1 year' });
 
+            // Planned DPS of ৳3,000 next month (user requested not to add now) — store as planned action
+            data.planned = data.planned || [];
+            data.planned.push({ id: generateId(), name: 'Planned DPS', amount: 3000, plannedDate: addMonthsPreserveDay(todayStr(), 1), notes: 'Do NOT auto-add now; user will confirm' });
+
             saveData();
         }
         function addSampleData() {
-            if (data.expenses.length === 0 && data.investments.length === 0) {
+            // Only add sample data when workspace is empty of any real user data
+            if (data.expenses.length === 0 && data.investments.length === 0 && data.incomes.length === 0 && (data.recurringInvestments||[]).length === 0 && (data.recurringIncomes||[]).length === 0 && (data.liabilities||[]).length === 0) {
                 const today = todayStr();
 
                 const sampleExps = [
@@ -2580,6 +3092,34 @@
             return d.toISOString().split('T')[0];
         }
 
+        // Return the 3rd-last working day (Mon-Fri) for a given month/year
+        function computeThirdLastWorkingDay(year, monthZeroBased) {
+            // monthZeroBased: 0 = Jan
+            const last = new Date(year, monthZeroBased + 1, 0);
+            let d = new Date(last);
+            let workingCount = 0;
+            while (d.getMonth() === last.getMonth()) {
+                const wd = d.getDay(); // 0 Sun, 6 Sat
+                if (wd !== 0 && wd !== 6) {
+                    workingCount += 1;
+                    if (workingCount === 3) break;
+                }
+                d.setDate(d.getDate() - 1);
+            }
+            return d.toISOString().split('T')[0];
+        }
+
+        function addMonthsPreserveDay(dateStr, months) {
+            const d = new Date(dateStr);
+            const day = d.getDate();
+            d.setMonth(d.getMonth() + months);
+            // if month overflowed and day moved, fix to last day
+            if (d.getDate() < day) {
+                d.setDate(0);
+            }
+            return d.toISOString().split('T')[0];
+        }
+
         // ============================================================
         //  INIT
         // ============================================================
@@ -2590,6 +3130,12 @@
             applyUserProfile();
             addSampleData();
 
+            // Process recurring incomes and expenses once at init to add any due entries
+            processRecurringIncomes();
+            processRecurringExpenses();
+            // Ensure salary amount is up-to-date per user
+            applySalaryAmountOverride(59000, true);
+
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -2597,12 +3143,18 @@
                 day: 'numeric'
             });
 
+            // Render added components including recurring expenses and liabilities
+            renderRecurringExpenses();
+            renderLiabilities();
             renderAll();
 
             // Check notifications every 5 minutes
             setInterval(() => {
+                processRecurringIncomes();
+                processRecurringExpenses();
                 checkNotifications();
                 updateBadge();
+                renderAll();
             }, 300000);
 
             // Re-render daily view at midnight
