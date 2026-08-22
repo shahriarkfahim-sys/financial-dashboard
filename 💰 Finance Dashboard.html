@@ -1111,20 +1111,24 @@
         <div class="net-worth-card" style="margin-bottom:25px;">
             <div>
                 <div class="label">💰 Net Worth</div>
-                <div class="amount" id="netWorth">$0.00</div>
+                <div class="amount" id="netWorth">৳0.00</div>
             </div>
             <div class="net-worth-stats">
                 <div class="stat">
                     <div class="stat-label">Monthly Income</div>
-                    <div class="stat-value" id="monthlyIncome">$0</div>
+                    <div class="stat-value" id="monthlyIncome">৳0</div>
                 </div>
                 <div class="stat">
                     <div class="stat-label">Monthly Savings</div>
-                    <div class="stat-value" id="monthlySavings">$0</div>
+                    <div class="stat-value" id="monthlySavings">৳0</div>
                 </div>
                 <div class="stat">
                     <div class="stat-label">Savings Rate</div>
                     <div class="stat-value" id="savingsRate">0%</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Estimated Worth</div>
+                    <div class="stat-value" id="estimatedWorth">৳0</div>
                 </div>
             </div>
         </div>
@@ -1141,28 +1145,28 @@
                         <div class="icon spend"><i class="fas fa-arrow-down"></i></div>
                         <div class="info">
                             <div class="label">Spending (MTD)</div>
-                            <div class="value" id="mtdSpending">$0</div>
+                            <div class="value" id="mtdSpending">৳0</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="icon save"><i class="fas fa-piggy-bank"></i></div>
                         <div class="info">
                             <div class="label">Total Savings</div>
-                            <div class="value" id="totalSavings">$0</div>
+                            <div class="value" id="totalSavings">৳0</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="icon invest"><i class="fas fa-chart-line"></i></div>
                         <div class="info">
                             <div class="label">Investments</div>
-                            <div class="value" id="totalInvestments">$0</div>
+                            <div class="value" id="totalInvestments">৳0</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="icon income"><i class="fas fa-arrow-up"></i></div>
                         <div class="info">
                             <div class="label">Income (MTD)</div>
-                            <div class="value" id="mtdIncome">$0</div>
+                            <div class="value" id="mtdIncome">৳0</div>
                         </div>
                     </div>
                 </div>
@@ -1171,7 +1175,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3><i class="fas fa-tags" style="color:#6c5ce7;"></i> Category Breakdown</h3>
-                        <span class="badge" id="categoryTotal">$0</span>
+                        <span class="badge" id="categoryTotal">৳0</span>
                     </div>
                     <div id="categoryList">
                         <div class="empty-state"><i class="fas fa-receipt"></i>No expenses yet</div>
@@ -1240,7 +1244,7 @@
                     <form id="expenseForm">
                         <div class="form-grid">
                             <div class="form-group">
-                                <label>Amount ($)</label>
+                                <label>Amount (৳)</label>
                                 <input type="number" id="expAmount" placeholder="25.00" step="0.01" required autofocus />
                             </div>
                             <div class="form-group">
@@ -1341,7 +1345,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Amount ($) *</label>
+                            <label>Amount (৳) *</label>
                             <input type="number" id="recurringAmount" placeholder="500" step="0.01" required />
                         </div>
                         <div class="form-group">
@@ -1393,7 +1397,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Amount Invested ($) *</label>
+                            <label>Amount Invested (৳) *</label>
                             <input type="number" id="investAmount" placeholder="2500" step="0.01" required />
                         </div>
                         <div class="form-group">
@@ -1401,11 +1405,11 @@
                             <input type="date" id="investDate" required />
                         </div>
                         <div class="form-group">
-                            <label>Purchase Price ($)</label>
+                            <label>Purchase Price (৳)</label>
                             <input type="number" id="investPurchasePrice" placeholder="168.00" step="0.01" />
                         </div>
                         <div class="form-group">
-                            <label>Current Price ($)</label>
+                            <label>Current Price (৳)</label>
                             <input type="number" id="investCurrentPrice" placeholder="185.40" step="0.01" />
                         </div>
                         <div class="form-group">
@@ -1503,6 +1507,8 @@
             savings: [],
             investments: [],
             recurringInvestments: [],
+            liabilities: [],
+            cash: 0,
             budgets: { ...DEFAULT_BUDGETS },
             notifications: []
         };
@@ -1547,7 +1553,8 @@
         }
 
         function formatCurrency(amount) {
-            return '$' + Number(amount).toFixed(2);
+            const n = Number(amount) || 0;
+            return '৳' + n.toFixed(2);
         }
 
         function getCategoryIcon(cat) {
@@ -1619,8 +1626,61 @@
             return data.investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
         }
 
+        function getTotalLiabilities() {
+            // liabilities stored as objects with `amount` representing outstanding principal (or total outstanding)
+            return (data.liabilities || []).reduce((s, l) => s + (l.amount || 0), 0);
+        }
+
         function getNetWorth() {
-            return getTotalSavings() + getTotalInvestments();
+            // Assets: savings + investments + cash. Liabilities subtract from assets.
+            const assets = getTotalSavings() + getTotalInvestments() + (data.cash || 0);
+            const liabilities = getTotalLiabilities();
+            return assets - liabilities;
+        }
+
+        // Estimate projected value from recurring investments (monthly contributions with optional rate & endDate)
+        function estimateRecurringProjection() {
+            let total = 0;
+            const today = new Date();
+            for (const r of (data.recurringInvestments || [])) {
+                const monthly = Number(r.amount) || 0;
+                if (!monthly) continue;
+                const start = r.startDate ? new Date(r.startDate) : null;
+                const end = r.endDate ? new Date(r.endDate) : null;
+                const annualRate = Number(r.annualRate) || 0;
+                const monthlyRate = annualRate / 12;
+
+                // If endDate exists, compute future value at endDate; otherwise compute accumulated value up to today
+                let nMonths = 0;
+                if (start) {
+                    const upTo = end ? end : today;
+                    nMonths = (upTo.getFullYear() - start.getFullYear()) * 12 + (upTo.getMonth() - start.getMonth()) + 1;
+                    if (nMonths < 0) nMonths = 0;
+                } else {
+                    // no start date — assume ongoing monthly since 1 month
+                    nMonths = 1;
+                }
+
+                if (annualRate > 0) {
+                    const rrate = monthlyRate;
+                    // future value of series: PMT * ((1+r)^n - 1) / r
+                    if (rrate === 0) {
+                        total += monthly * nMonths;
+                    } else {
+                        total += monthly * ((Math.pow(1 + rrate, nMonths) - 1) / rrate);
+                    }
+                } else {
+                    total += monthly * nMonths;
+                }
+            }
+            return total;
+        }
+
+        function renderEstimatedWorth() {
+            const baseNet = getNetWorth();
+            const projection = estimateRecurringProjection();
+            const estimated = baseNet + projection;
+            document.getElementById('estimatedWorth').textContent = formatCurrency(estimated);
         }
 
         function getTodayExpenses() {
@@ -1720,6 +1780,7 @@
             renderInvestmentHistory();
             renderChart();
             renderNotifications();
+            renderEstimatedWorth();
             updateBadge();
             saveData();
             checkNotifications();
@@ -1761,7 +1822,7 @@
 
             if (monthExpenses.length === 0) {
                 container.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i>No expenses yet</div>`;
-                document.getElementById('categoryTotal').textContent = '$0';
+                document.getElementById('categoryTotal').textContent = formatCurrency(0);
                 return;
             }
 
@@ -2052,7 +2113,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) { return '$' + value; },
+                                callback: function(value) { return '৳' + value; },
                                 font: { size: 9 },
                                 color: textColor
                             },
@@ -2410,6 +2471,38 @@
         // ============================================================
         //  SAMPLE DATA
         // ============================================================
+        // Apply user-provided profile/data (from conversation)
+        function applyUserProfile() {
+            // Avoid duplicating if already applied (check by name markers)
+            const hasProfile = (data.recurringInvestments || []).some(r => r.name && r.name.includes('IDPC'))
+                || (data.investments || []).some(i => i.name && i.name.includes('IDPC'));
+            if (hasProfile) return;
+
+            // Liabilities: debt and EMI remaining
+            data.liabilities = data.liabilities || [];
+            data.liabilities.push({ id: generateId(), name: 'Personal Debt', amount: 45000 });
+            // EMI 3600 for 6 months, 1 paid -> 5 remaining
+            const emiRemaining = 5;
+            data.liabilities.push({ id: generateId(), name: 'Loan EMI (remaining)', amount: emiRemaining * 3600 });
+
+            // Add current month's salary posting (approximate — you can edit later)
+            const salaryDate = todayStr();
+            data.incomes.push({ id: generateId(), amount: 58000, source: 'payroll', description: 'Monthly Salary (payroll)', date: salaryDate, isIncome: true });
+            // bkash extra income (or pocket) — recorded as income
+            data.incomes.push({ id: generateId(), amount: 1000, source: 'bkash', description: 'Bkash extra', date: salaryDate, isIncome: true });
+
+            // Recurring investments: IDPC, Trust, Bkash
+            data.recurringInvestments = data.recurringInvestments || [];
+            data.recurringInvestments.push({ id: generateId(), name: 'IDPC', type: 'dps', amount: 5000, frequency: 'monthly', startDate: '2025-01-01', endDate: '2027-01-01', annualRate: 0.1065 });
+            data.recurringInvestments.push({ id: generateId(), name: 'Trust Investment', type: 'sip', amount: 3700, frequency: 'monthly', startDate: '2025-07-01', annualRate: 0.095 });
+            data.recurringInvestments.push({ id: generateId(), name: 'Bkash Monthly', type: 'dps', amount: 1000, frequency: 'monthly', startDate: todayStr(), annualRate: 0 });
+
+            // Add a record for the 1-year recurring deposit expected payout (user stated it yields 12636 after 1 year)
+            data.savings = data.savings || [];
+            data.savings.push({ id: generateId(), name: '1yr Recurring Deposit (expected)', current: 0, expectedMaturity: 12636, notes: 'User mentioned 1yr recurrent deposit => 12636 after 1 year' });
+
+            saveData();
+        }
         function addSampleData() {
             if (data.expenses.length === 0 && data.investments.length === 0) {
                 const today = todayStr();
@@ -2493,6 +2586,8 @@
         function init() {
             loadTheme();
             loadData();
+            // Apply user's provided profile/data before sample data
+            applyUserProfile();
             addSampleData();
 
             document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', {
